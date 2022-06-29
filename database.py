@@ -5,13 +5,17 @@ from pymongo import MongoClient
 cluster = MongoClient("mongodb+srv://liewe:eaker007@cluster0.ohrbe.mongodb.net/?retryWrites=true&w=majority")
 
 database = cluster["PriceTracker"]
-collection = database["product"]
+collection = database["test"]
 
-def create_item(documents):
+def create_items(documents):
     result = collection.insert_many(documents)
     return result
 
+
+
 def update_items(documents):
+    print(documents.product_name)
+    print(documents[0].product_name)
     query = {"product_name": documents.product_name}
     new_values = {"$set": {"price": documents.price, "discount": documents.discount , "img_url": documents.img_url}}
 
