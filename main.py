@@ -20,36 +20,49 @@ chrome_options = Options()
 #chrome_options.add_argument('--headless')
 browser = webdriver.Chrome(options=chrome_options, executable_path=r"chromedriver.exe")
 
-url = "https://www.ah.nl/producten/salades-pizza-maaltijden?page=16"
-browser.get(url)
-ActionChains(browser).move_to_element(browser.find_element(By.XPATH, "//button[@id='accept-cookies']")).click().perform()
-###### Wait until you see some element that signals the page is completely loaded
-WebDriverWait(browser, timeout=10).until(lambda x: browser.find_element(By.XPATH, "//ul[@class='navigation-footer_icons__3aIpq']"))
+from database import (
+    create_item,
+    update_item,
+    remove_item,
+)
 
-############## do your things with the first page
-content =  browser.page_source.encode('ascii','ignore').decode("utf-8")
+def extract_products_cat(url):
+    global content
 
-# print("before scrolling: ")
-# browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-# #### Now if you are sure there is next page
-# #browser.find_element(By.XPATH, "//span[@class='button-or-anchor_label__2eIdb']").click()
+    browser.get(url)
+
+    try:
+        ActionChains(browser).move_to_element(browser.find_element(By.XPATH, "//button[@id='accept-cookies']")).click().perform()
+    except: NoSuchElementException
+
+    #browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+    ###### Wait until you see some element that signals the page is completely loaded
+    #WebDriverWait(browser, timeout=10).until(lambda x: browser.find_element(By.XPATH, "//ul[@class='navigation-footer_icons__3aIpq']"))
+
+    ############## do your things with the first page
+    #content =  browser.page_source
+
+    print("before scrolling: ")
+    browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+    #### Now if you are sure there is next page
+    # #browser.find_element(By.XPATH, "//span[@class='button-or-anchor_label__2eIdb']").click()
 
 
-# while True:
-#     browser.implicitly_wait(2)
-#     try:
-#         ActionChains(browser).move_to_element(browser.find_element(By.XPATH,XPATH_BTN)).click().perform()    
-#     except NoSuchElementException:
-#         print("End: No next element found")
-#         break
-    
+    while True:
+        browser.implicitly_wait(1)
+        try:
+            ActionChains(browser).move_to_element(browser.find_element(By.XPATH,XPATH_BTN)).click().perform()    
+        except NoSuchElementException:
+            print("End: No next element found")
+            break
+        
 
-###### Wait until you see some element that signals the page is completely loaded
-# WebDriverWait(browser, timeout=10).until(lambda x: browser.find_element(By.XPATH, "//ul[@class='navigation-footer_icons__3aIpq']"))
+    ##### Wait until you see some element that signals the page is completely loaded
+    WebDriverWait(browser, timeout=10).until(lambda x: browser.find_element(By.XPATH, "//ul[@class='navigation-footer_icons__3aIpq']"))
 
 
 
-# content =  browser.page_source.encode('ascii','ignore').decode("utf-8")
+    content =  browser.page_source.encode('ascii','ignore').decode("utf-8")
 
 # with open('scraped.txt', 'w') as file:
 #     file.write(content)
@@ -72,45 +85,53 @@ def get_categories():
     return catlist
 
 # get prices on current page
-def get_prices():
-    soup = get_soup(content)
+def get_prices(url):
+    extract_products_cat(url)
+    #soup = get_soup(content)
     prodlist = []
     regex = re.compile('link_root')
     regex2 = re.compile('price-amount_root')
-    regex3 = re.compile('shield_')
+    regex3 = re.compile('shield_title')
+    regex4 = re.compile('shield_text')
+
+    soup = BeautifulSoup(content, 'html.parser')
     
     productlist = soup.find_all("a", {"class": regex})
+    #print(productlist)
 
     for item in productlist:
+        #get price per item
         for price in item.find_all('div', class_= regex2):
-            price = price.get_text()            
+            price = price.get_text()
+            #get imgurl per item            
+            img_url = item.find('img', class_='lazy-image_image__2025k').get('src')
+            #check for possible discount, grab both title and text if available
             if (item.find('span', class_=regex3)):
                 discount = item.find('span', class_=regex3).text
+                if (item.find('span', class_=regex4)):
+                    discount = (discount + " " + item.find('span', class_=regex4).text)
             else:
-                discount = 0
-
+                discount = "0"
+            #put into product obj
             product = {
                 'product_name': item.get('title'),
                 'price': price,
-                'discount': discount
+                'discount': discount,
+                'img_url': img_url
             }
+            #collect into list and resturn
             prodlist.append(product)
-    #Go to next page if more than 1000 result (?page=26) exists
-    print(len(prodlist))
-    
-
-    # check_next_page(soup)
-
+    print(create_item(prodlist))
     #store all products from category to DB
 
     #return to continue with next category
     
     #    # image = soup.find('img')['src']
 
-def check_next_page(soup):
-    regex = re.compile('botton-or')
-    item = soup.find('span', regex)
-    print(item)
+
+async def store_items(prodlist):    
+    response = await create_item(prodlist)()
+    return response 
 
 
 # link for extract html data
@@ -122,12 +143,14 @@ def get_soup(url):
 
 
 catlist = get_categories()
-print(catlist) 
-get_prices()
+#print(catlist) 
 
-# Goto first page of each category and grab all products, price, discounts
-# for cat in catlist:
-#     url = (cat['url'])
-   
+
+#Goto first page of each category and grab all products, price, discounts
+for cat in catlist:
+    url = (cat['url'])
+    prodlist = get_prices(url)
+
+    
 
 
