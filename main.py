@@ -12,7 +12,8 @@ from database import (create_items)
     
 
 def open_all_pages_cat(url, cat_name):
-    browser.get(url)
+    NEXT_BTN_XPATH = "//button[@class='button-or-anchor_root__3z4hb button-default_root__2DBX1 button-default_primary__R4c6W']"
+    browser.get(url)    
     try:
         ActionChains(browser).move_to_element(browser.find_element(By.XPATH, "//button[@id='accept-cookies']")).click().perform()
     except: NoSuchElementException
@@ -24,7 +25,7 @@ def open_all_pages_cat(url, cat_name):
     while True:
         browser.implicitly_wait(1)
         try:
-            ActionChains(browser).move_to_element(browser.find_element(By.XPATH,XPATH_BTN)).click().perform()    
+            ActionChains(browser).move_to_element(browser.find_element(By.XPATH,NEXT_BTN_XPATH)).click().perform()    
         except NoSuchElementException:
             print("Ended collecting data from: "+ cat_name)
             break
@@ -87,10 +88,8 @@ def get_product_info(content):
 
 if __name__ == "__main__":
     BASE_URL = 'https://www.ah.nl/producten'
-    XPATH_BTN = "//button[@class='button-or-anchor_root__3z4hb button-default_root__2DBX1 button-default_primary__R4c6W']"
     chrome_options = Options()
-    chrome_options.add_argument('--headless')
-    
+    chrome_options.add_argument('--headless')    
     browser = webdriver.Chrome(options=chrome_options, executable_path=r"chromedriver.exe")
   
     #get all categories from ah.nl
