@@ -9,13 +9,15 @@ collection = database["product"]
 
 def create_item(documents):
     result = collection.insert_many(documents)
-    print(result)
     return result
 
-async def update_item(title, mail):
-    await collection.update_one({"title": title}, {"$set": {"mail": mail}})
-    document = await collection.find_one({"title": title})
-    return document
+def update_items(documents):
+    query = {"product_name": documents.product_name}
+    new_values = {"$set": {"price": documents.price, "discount": documents.discount , "img_url": documents.img_url}}
+
+    #update the document
+    result = collection.update_many(query, new_values)
+    return result
 
 async def remove_item(title):
     await collection.delete_one({"title": title})
