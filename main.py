@@ -4,19 +4,16 @@ from datetime import datetime, timedelta
 import time
 import fastapi
 from fastapi import BackgroundTasks, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pricetracker import start_scrape
 from database import fetch_all_items
 
 
-# an HTTP-specific exception class  to generate exception information
-
-from fastapi.middleware.cors import CORSMiddleware
-HOUR_SCHEDULE = "18:28:00"
+HOUR_SCHEDULE = "19:34:00"
 schedule.every().day.at(HOUR_SCHEDULE).do(start_scrape)
+
 app = FastAPI()
-
 origins = ["*"]
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -43,8 +40,7 @@ async def startup_event():
 class BackgroundTasks(threading.Thread):        
     def run(self,*args,**kwargs):        
         while True:             
-            start_scrape()
-            #schedule.run_pending()                    
+            schedule.run_pending()                    
             time.sleep(1)     
 
 
