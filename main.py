@@ -1,5 +1,6 @@
 import schedule
 import threading
+from datetime import datetime, timedelta
 import time
 import fastapi
 from fastapi import BackgroundTasks, FastAPI
@@ -10,7 +11,7 @@ from database import fetch_all_items
 # an HTTP-specific exception class  to generate exception information
 
 from fastapi.middleware.cors import CORSMiddleware
-HOUR_SCHEDULE = "15:35"
+HOUR_SCHEDULE = "18:28:00"
 schedule.every().day.at(HOUR_SCHEDULE).do(start_scrape)
 app = FastAPI()
 
@@ -24,10 +25,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/")
-async def read_root():
-    res = await fetch_all_items()
+@app.get("/{scan_date}")
+async def scan_by_date(scan_date):
+    res = await fetch_all_items(scan_date)
     return res
+
+@app.get("/")
+async def read_root():    
+    return {"hi":"test"}
 
 @app.on_event("startup")
 async def startup_event():    
@@ -37,6 +42,9 @@ async def startup_event():
 
 class BackgroundTasks(threading.Thread):        
     def run(self,*args,**kwargs):        
-        while True:            
-            schedule.run_pending()                    
+        while True:             
+            start_scrape()
+            #schedule.run_pending()                    
             time.sleep(1)     
+
+

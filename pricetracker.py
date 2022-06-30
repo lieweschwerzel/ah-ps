@@ -1,7 +1,6 @@
+from datetime import datetime
 from multiprocessing.connection import wait
-import schedule
 import sys
-import time
 import requests
 from bs4 import BeautifulSoup
 import re
@@ -17,26 +16,30 @@ from database import (create_items)
 BASE_URL = 'https://www.ah.nl/producten'
 chrome_options = Options()
 chrome_options.add_argument('--headless')    
+chrome_options.add_argument('--disable-gpu')
 browser = webdriver.Chrome(options=chrome_options, executable_path=r"chromedriver.exe")    
+
 
 def open_all_pages_cat(url, cat_name):
     NEXT_BTN_XPATH = "//button[@class='button-or-anchor_root__3z4hb button-default_root__2DBX1 button-default_primary__R4c6W']"
     browser.get(url)    
     try:
         ActionChains(browser).move_to_element(browser.find_element(By.XPATH, "//button[@id='accept-cookies']")).click().perform()
-    except: NoSuchElementException
-    print("Start collecting data from: "+ cat_name)
+    except: NoSuchElementException    
     #scroll to END once to make Next button appear
     browser.implicitly_wait(2)
+    starttime = datetime.now() 
+    print(get_time() + "  collecting data from: "+ cat_name)    
     browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
     #### check if there is a next page button, click when available, break when not found
     while True:
         browser.implicitly_wait(1)
-        try:
+        try:     
             ActionChains(browser).move_to_element(browser.find_element(By.XPATH,NEXT_BTN_XPATH)).click().perform()
-            print("Found next")    
+            #print(datetime.now().strftime("%H:%M:%S") + "  found next")    
         except NoSuchElementException:
-            print("No next found.\nEnded collecting data from: "+ cat_name)
+            endtime = datetime.now()-starttime
+            print(get_time() + "  end collecting data " + "( " + str(endtime)[0:7] + " )")
             break
     ##### Wait until you see some element that signals the page is completely loaded
     WebDriverWait(browser, timeout=10).until(lambda x: browser.find_element(By.XPATH, "//ul[@class='navigation-footer_icons__3aIpq']"))
@@ -50,7 +53,6 @@ def get_categories():
     # link for extract html data
     htmldata = requests.get(BASE_URL, headers = {'User-Agent': 'Mozilla/5.0'}).text
     soup = BeautifulSoup(htmldata, 'html.parser')
-
     for data in soup.find_all("a", {"class" : regex,  'href': True}):        
         category = {
         'cat_name': data.get_text(),
@@ -68,7 +70,6 @@ def get_product_info(content):
     regex2 = re.compile('price-amount_root')
     regex3 = re.compile('shield_title')
     regex4 = re.compile('shield_text')
-
     soup = BeautifulSoup(content, 'html.parser')    
     productlist = soup.find_all("a", {"class": regex})
     #loop through the soup result per product 
@@ -76,10 +77,10 @@ def get_product_info(content):
         #get price 
         for price in item.find_all('div', class_= regex2):            
             #check for possible discount, grab both title (and text when available)
-            if (item.find('span', class_=regex3)):
-                discount = item.find('span', class_=regex3).text
-                if (item.find('span', class_=regex4)):
-                    discount = (discount + " " + item.find('span', class_=regex4).text)
+            if (item.find('span', class_= regex3)):
+                discount = item.find('span', class_= regex3).text
+                if (item.find('span', class_= regex4)):
+                    discount = (discount + " " + item.find('span', class_= regex4).text)
             else:
                 discount = "0"
             #put into product obj
@@ -91,24 +92,32 @@ def get_product_info(content):
             }
             #collect into list and resturn
             prodlist.append(product)
-    print(str(len(prodlist))+ (" products"))
+    print(get_time() + "  found "+ str(len(prodlist)) + " products")
     #store all products from category to DB
     create_items(prodlist)
 
 def start_scrape():
-    print("Schedule triggered")
+    print()
+    starttime = datetime.now()
+    print(get_time() + "  start scraping...")
     #get all categories from ah.nl
     catlist = get_categories()
+    print(get_time() + "  received categories")
     #print(catlist) 
     #Goto first page of each category, use selenium to open all with click() and grab all products, price, discounts
     for cat in catlist:
         url = (cat['url'])
-        cat_name = (cat['cat_name'])
+        cat_name = (cat['cat_name'])       
         #open all pages until no more next button is found, with selenium since button is javascript
         content = open_all_pages_cat(url, cat_name)
         #use beautiful soup to extract relevant data and save to mongoDB
         get_product_info(content) 
+    endtime = datetime.now()-starttime
+    print(get_time() + "  *** end of scraping. \nTotal time: "+str(endtime)[0:7]+" ***")
 
+def get_time():
+    now = datetime.now()
+    return now.strftime("%H:%M:%S")
 
     
 
