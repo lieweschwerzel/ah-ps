@@ -50,9 +50,10 @@ async def delete_subscription(email, product_name):
     collection.delete_one({ "$and" : [{"email": email}, {"product_name": product_name}]})
 
 async def fetch_by_product_name(product_name):    
-    collection = database['2022_07_02'] 
+    collection = database['2022_07_03'] 
     items = []
-    cursor = collection.find({'product_name': {"$regex" : product_name.capitalize()}})
+    regex = ".*" + product_name + ".*"
+    cursor = collection.find({'product_name': re.compile(regex, re.IGNORECASE)})
     async for document in cursor:
         items.append(Item(**document))
     return items

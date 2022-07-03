@@ -12,7 +12,7 @@ from pricetracker import start_scrape
 from database import ( fetch_all_items, get_subscriptions, create_subscription, delete_subscription, fetch_by_product_name )
 
 
-HOUR_SCHEDULE = "01:45:30"
+HOUR_SCHEDULE = "23:21"
 schedule.every().day.at(HOUR_SCHEDULE).do(start_scrape)
 
 app = FastAPI()
