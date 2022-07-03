@@ -1,15 +1,18 @@
+import email
+import re
 import schedule
 import threading
 from datetime import datetime, timedelta
 import time
 import fastapi
-from fastapi import BackgroundTasks, FastAPI
+from fastapi import BackgroundTasks, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from model import Subscription
 from pricetracker import start_scrape
-from database import fetch_all_items
+from database import ( fetch_all_items, get_subscriptions, create_subscription, delete_subscription )
 
 
-HOUR_SCHEDULE = "19:34:00"
+HOUR_SCHEDULE = "01:45:30"
 schedule.every().day.at(HOUR_SCHEDULE).do(start_scrape)
 
 app = FastAPI()
@@ -21,6 +24,33 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+#post sub
+@app.post("/post")
+async def post_item(subscription: Subscription):
+    response = await create_subscription(subscription)
+    if response:
+        return response
+    raise HTTPException(404, f"There is no item with the title {subscription.product_name}")
+
+@app.post("/PostSub")
+async def PostSub(subscription : Subscription):
+    res = await create_subscription(subscription)
+    if res:
+        return res
+    raise HTTPException(404, "duplicate")
+
+@app.get("/subs/{email}")
+async def get_subs_of_email(email):
+    res = await get_subscriptions(email)
+    return res
+
+@app.delete("/subs/{email}/{product_name}")
+async def delete_sub(email, product_name):    
+    res = await delete_subscription(email, product_name)
+    if res is None:
+        return {"deleted"}
+    return res
 
 @app.get("/{scan_date}")
 async def scan_by_date(scan_date):
@@ -37,9 +67,10 @@ async def startup_event():
     t = BackgroundTasks()
     t.start()
 
+
 class BackgroundTasks(threading.Thread):        
     def run(self,*args,**kwargs):        
-        while True:             
+        while True:           
             schedule.run_pending()                    
             time.sleep(1)     
 

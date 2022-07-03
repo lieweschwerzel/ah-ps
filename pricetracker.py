@@ -10,7 +10,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import NoSuchElementException 
-from database import (create_items)
+from database import (create_items, set_last_updated)
 
 
 BASE_URL = 'https://www.ah.nl/producten'
@@ -63,63 +63,73 @@ def get_categories():
 
 
 # get all requiered info from page content from selenium
-def get_product_info(content):    
+def get_product_info(content, scan_date):    
     #soup = get_soup(content)
     prodlist = []
-    regex = re.compile('link_root')
+    regex = re.compile('link_root') 
     regex2 = re.compile('price-amount_root')
     regex3 = re.compile('shield_title')
     regex4 = re.compile('shield_text')
+    regex5 = re.compile('price_unitSize')
     soup = BeautifulSoup(content, 'html.parser')    
     productlist = soup.find_all("a", {"class": regex})
     #loop through the soup result per product 
     for item in productlist:
         #get price 
-        for price in item.find_all('div', class_= regex2):            
-            #check for possible discount, grab both title (and text when available)
+        for price in item.find_all('div', class_ = regex2):            
+            #check for possible discount, grab both title (and text when available)      
             if (item.find('span', class_= regex3)):
                 discount = item.find('span', class_= regex3).text
                 if (item.find('span', class_= regex4)):
                     discount = (discount + " " + item.find('span', class_= regex4).text)
             else:
                 discount = "0"
+            if (item.find('span', class_ = regex5)):
+                unit = item.find('span', class_ = regex5).text
+            else: 
+                unit = ("no unit")                
             #put into product obj
             product = {
                 'product_name': item.get('title'),
                 'price': price.get_text(),
+                'unit': unit,
                 'discount': discount,
-                'img_url': item.find('img', class_='lazy-image_image__2025k').get('src')
+                'img_url': item.find('img', class_ = 'lazy-image_image__2025k').get('src')
             }
             #collect into list and resturn
             prodlist.append(product)
     print(get_time() + "  found "+ str(len(prodlist)) + " products")
     #store all products from category to DB
-    create_items(prodlist)
+    create_items(prodlist, scan_date)
+    
 
 def start_scrape():
+    scan_date = datetime.now().strftime("%Y_%m_%d")    
     print()
     starttime = datetime.now()
     print(get_time() + "  start scraping...")
     #get all categories from ah.nl
-    catlist = get_categories()
+    catlist = get_categories() 
     print(get_time() + "  received categories")
     #print(catlist) 
     #Goto first page of each category, use selenium to open all with click() and grab all products, price, discounts
     for cat in catlist:
-        url = (cat['url'])
-        cat_name = (cat['cat_name'])       
+        url = cat['url']
+        cat_name = cat['cat_name']
         #open all pages until no more next button is found, with selenium since button is javascript
         content = open_all_pages_cat(url, cat_name)
         #use beautiful soup to extract relevant data and save to mongoDB
-        get_product_info(content) 
+        get_product_info(content, scan_date) 
     endtime = datetime.now()-starttime
-    print(get_time() + "  *** end of scraping. \nTotal time: "+str(endtime)[0:7]+" ***")
+    print(get_time() + "  *** end of scraping. Total time: "+str(endtime)[0:7]+" ***")
+    set_last_updated(scan_date)
 
 def get_time():
     now = datetime.now()
     return now.strftime("%H:%M:%S")
 
-    
+
+
 
 # with open('scraped.txt', 'w') as file:
 #     file.write(content)
