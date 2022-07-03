@@ -68,8 +68,8 @@ def get_product_info(content, scan_date):
     prodlist = []
     regex = re.compile('link_root') 
     regex2 = re.compile('price-amount_root')
-    regex3 = re.compile('shield_title')
-    regex4 = re.compile('shield_text')
+    regex3 = re.compile('shield_text')
+    regex4 = re.compile('shield_title')
     regex5 = re.compile('price_unitSize')
     soup = BeautifulSoup(content, 'html.parser')    
     productlist = soup.find_all("a", {"class": regex})
@@ -77,11 +77,11 @@ def get_product_info(content, scan_date):
     for item in productlist:
         #get price 
         for price in item.find_all('div', class_ = regex2):            
-            #check for possible discount, grab both title (and text when available)      
+            #check for possible discount, grab both text (and title when available)      
             if (item.find('span', class_= regex3)):
                 discount = item.find('span', class_= regex3).text
                 if (item.find('span', class_= regex4)):
-                    discount = (discount + " " + item.find('span', class_= regex4).text)
+                    discount = (item.find('span', class_= regex4).text + " " + discount)
             else:
                 discount = "0"
             if (item.find('span', class_ = regex5)):

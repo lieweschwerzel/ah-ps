@@ -9,11 +9,11 @@ from fastapi import BackgroundTasks, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from model import Subscription
 from pricetracker import start_scrape
-from database import ( fetch_all_items, get_subscriptions, create_subscription, delete_subscription, fetch_by_product_name )
+from database import ( fetch_all_items, get_subscriptions, create_subscription, delete_subscription, fetch_by_product_name, check_discounts )
 
 
-HOUR_SCHEDULE = "23:21"
-schedule.every().day.at(HOUR_SCHEDULE).do(start_scrape)
+HOUR_SCHEDULE = "00:26"
+schedule.every().day.at(HOUR_SCHEDULE).do(check_discounts)
 
 app = FastAPI()
 origins = ["*"]
@@ -70,7 +70,8 @@ async def read_root():
     return {"hi":"test"}
 
 @app.on_event("startup")
-async def startup_event():    
+async def startup_event():
+    await check_discounts("liewe")
     print("******** Next scrape will be at: " + str(schedule.next_run()) +" ******** ")
     t = BackgroundTasks()
     t.start()
@@ -78,8 +79,9 @@ async def startup_event():
 
 class BackgroundTasks(threading.Thread):        
     def run(self,*args,**kwargs):        
-        while True:           
-            schedule.run_pending()                    
+        while True:
+                     
+           # schedule.run_pending()                    
             time.sleep(1)     
 
 

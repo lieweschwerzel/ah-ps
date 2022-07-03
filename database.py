@@ -50,7 +50,7 @@ async def delete_subscription(email, product_name):
     collection.delete_one({ "$and" : [{"email": email}, {"product_name": product_name}]})
 
 async def fetch_by_product_name(product_name):    
-    collection = database['2022_07_03'] 
+    collection = database['2022_07_04'] 
     items = []
     regex = ".*" + product_name + ".*"
     cursor = collection.find({'product_name': re.compile(regex, re.IGNORECASE)})
@@ -77,15 +77,19 @@ def get_last_updated():
     res = collection.find({'id': 1})  
     return res
 
-async def update_last_updated(last_update):
-    collection = database['updates']    
-    await collection.update_item({ title}, {"$set": {"mail": mail}})
-
-# async def search(product):
-#     collection = database[scan_date] 
-
-#async def subscribe_to_product(email, productId):
-
+ 
+async def check_discounts(email):
+    collection = database['subscriptions']
+    cursor = collection.find({'email': email}) 
+    subs = []
+    async for doc in cursor:
+        subs.append(Subscription(**doc))
+    print(len(subs))
+    for sub in subs:
+        print(sub.product_name)
+    # check if latest db collection has product with discount not null and send email (or add to a list and send later all at once by mail)
+    
+    # 
 
 def get_time():
     now = datetime.now()
