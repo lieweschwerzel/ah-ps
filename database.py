@@ -50,9 +50,9 @@ async def delete_subscription(email, product_name):
     collection.delete_one({ "$and" : [{"email": email}, {"product_name": product_name}]})
 
 async def fetch_by_product_name(product_name):    
-    collection = database['2022_07_03'] 
+    collection = database['2022_07_02'] 
     items = []
-    cursor = collection.find({'product_name': {"$regex" : product_name}})
+    cursor = collection.find({'product_name': {"$regex" : product_name.capitalize()}})
     async for document in cursor:
         items.append(Item(**document))
     return items
@@ -62,6 +62,7 @@ async def fetch_all_items(scan_date):
     items = []
     cursor = collection.find()
     async for document in cursor:
+        document.toLowerCase()
         items.append(Item(**document))
     return items
 
