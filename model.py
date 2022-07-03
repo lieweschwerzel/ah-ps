@@ -3,7 +3,7 @@ from itertools import product
 from typing import Optional
 from pydantic import BaseModel
 
-class item(BaseModel):
+class Item(BaseModel):
     product_name: str
     price: str
     unit: str

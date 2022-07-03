@@ -9,7 +9,7 @@ from fastapi import BackgroundTasks, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from model import Subscription
 from pricetracker import start_scrape
-from database import ( fetch_all_items, get_subscriptions, create_subscription, delete_subscription )
+from database import ( fetch_all_items, get_subscriptions, create_subscription, delete_subscription, fetch_by_product_name )
 
 
 HOUR_SCHEDULE = "01:45:30"
@@ -52,10 +52,18 @@ async def delete_sub(email, product_name):
         return {"deleted"}
     return res
 
-@app.get("/{scan_date}")
+@app.get("/search/{product_name}")
+async def search_by_product_name(product_name):
+    res = await fetch_by_product_name(product_name)
+    return res
+    
+
+@app.get("/scan_date/{scan_date}")
 async def scan_by_date(scan_date):
     res = await fetch_all_items(scan_date)
     return res
+
+
 
 @app.get("/")
 async def read_root():    

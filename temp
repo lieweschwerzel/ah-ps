@@ -1,3 +1,31 @@
+
+async def fetch_by_product_name(product_name):
+    scan_date = get_last_updated()
+    collection = database[scan_date] 
+    items = []
+    cursor = collection.find({"product_name" : product_name})
+    async for document in cursor:
+        items.append(Item(**document))
+    return items
+
+main:
+@app.delete("/subs/{email}/{product_name}")
+async def delete_sub(email, product_name):    
+    res = await delete_subscription(email, product_name)
+    if res is None:
+        return {"deleted"}
+    return res
+
+  
+
+
+
+
+
+
+
+''''''''''''''''''''''''''
+
 from multiprocessing.connection import wait
 import time
 import webbrowser

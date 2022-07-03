@@ -1,9 +1,9 @@
 from ast import Subscript
 from datetime import datetime
+import re
 from typing import Collection
-
 from fastapi import HTTPException
-from model import item, Subscription
+from model import Item, Subscription
 import pymongo
 from pymongo import MongoClient
 import motor.motor_asyncio
@@ -20,10 +20,7 @@ def create_items(documents, scan_date):
     result = collection.insert_many(documents)
     return result
     
-def set_last_updated(last_update):
-    collection = database['_last_updated']  
-    #create if it doesnt exist, else update the date
-    collection.update_one({'id': 1}, {'$set':{'last_updated':last_update}}, upsert=True)  
+
 
 async def create_subscription(subscription):
     collection = database['subscriptions']     
@@ -51,18 +48,32 @@ async def get_subscriptions(email):
 async def delete_subscription(email, product_name):
     collection = database['subscriptions']  
     collection.delete_one({ "$and" : [{"email": email}, {"product_name": product_name}]})
-    
 
+async def fetch_by_product_name(product_name):    
+    collection = database['2022_07_03'] 
+    items = []
+    cursor = collection.find({'product_name': {"$regex" : product_name}})
+    async for document in cursor:
+        items.append(Item(**document))
+    return items
 
 async def fetch_all_items(scan_date):
     collection = database[scan_date] 
     items = []
     cursor = collection.find()
     async for document in cursor:
-        items.append(item(**document))
+        items.append(Item(**document))
     return items
 
+def set_last_updated(last_update):
+    collection = database['_last_updated']  
+    #create if it doesnt exist, else update the date
+    collection.update_one({'id': 1}, {'$set':{'last_updated':last_update}}, upsert=True)  
 
+def get_last_updated():
+    collection = database['_last_updated']  
+    res = collection.find({'id': 1})  
+    return res
 
 async def update_last_updated(last_update):
     collection = database['updates']    
