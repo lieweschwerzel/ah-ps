@@ -12,8 +12,8 @@ from pricetracker import start_scrape
 from database import ( fetch_all_items, get_subscriptions, create_subscription, delete_subscription, fetch_by_product_name, check_discounts )
 
 
-HOUR_SCHEDULE = "00:26"
-schedule.every().day.at(HOUR_SCHEDULE).do(check_discounts)
+HOUR_SCHEDULE = "17:54"
+schedule.every().day.at(HOUR_SCHEDULE).do(start_scrape)
 
 app = FastAPI()
 origins = ["*"]
@@ -58,7 +58,6 @@ async def scan_by_date(scan_date):
     return res
 
 
-
 @app.get("/")
 async def read_root():    
     return {"hi":"test"}
@@ -73,9 +72,8 @@ async def startup_event():
 
 class BackgroundTasks(threading.Thread):        
     def run(self,*args,**kwargs):        
-        while True:
-                     
-           # schedule.run_pending()                    
+        while True:                     
+            schedule.run_pending()                    
             time.sleep(1)     
 
 

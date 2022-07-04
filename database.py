@@ -1,5 +1,6 @@
 from ast import Subscript
 from datetime import datetime
+from gc import collect
 import re
 from typing import Collection
 from fastapi import HTTPException
@@ -26,13 +27,14 @@ async def create_subscription(subscription):
     collection = database['subscriptions']     
     #collection.create_index([('email', pymongo.ASCENDING)], unique = True)    
     subs = []
-    cursor  =  collection.find({ "$and" : [{"email": subscription.email}, {"product_name": subscription.product_name}]})
-    #cursor  = collection.find({"email": subscription.email, "product_name": subscription.product_name})
+    print(subscription.unit)
+    #check if sub already exists
+    cursor  =  collection.find({ "$and" : [{"email": subscription.email}, {"product_name": subscription.product_name}, {"unit": subscription.unit}]})
     async for document in cursor:
         subs.append(Subscription(**document))
     if (len(subs) > 0):
         raise HTTPException(status_code=422, detail="subscription already exists") 
-    else:
+    else:        
         await collection.insert_one(subscription.dict())
         return subscription
 
@@ -53,7 +55,7 @@ async def fetch_by_product_name(product_name):
     collection = database['2022_07_04'] 
     items = []
     regex = ".*" + product_name + ".*"
-    cursor = collection.find({'product_name': re.compile(regex, re.IGNORECASE)})
+    cursor = collection.find({'product_name': re.compile(regex, re.IGNORECASE)}).limit(15)
     async for document in cursor:
         items.append(Item(**document))
     return items
