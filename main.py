@@ -33,12 +33,6 @@ async def post_item(subscription: Subscription):
         return response
     raise HTTPException(404, f"There is no item with the title {subscription.product_name}")
 
-@app.post("/PostSub")
-async def PostSub(subscription : Subscription):
-    res = await create_subscription(subscription)
-    if res:
-        return res
-    raise HTTPException(404, "duplicate")
 
 @app.get("/subs/{email}")
 async def get_subs_of_email(email):
