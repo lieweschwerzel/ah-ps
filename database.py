@@ -35,8 +35,10 @@ async def create_subscription(subscription):
     if (len(subs) > 0):
         raise HTTPException(status_code=422, detail="subscription already exists") 
     else:        
-        await collection.insert_one(subscription.dict())
+        await collection.insert_one(subscription.dict())        
         return subscription
+        
+    
 
 
 async def get_subscriptions(email):

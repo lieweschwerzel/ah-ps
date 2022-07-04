@@ -7,7 +7,7 @@ class Item(BaseModel):
     product_name: str
     price: str
     unit: str
-    discount: str
+    discount: Optional[str] = None
     img_url : str
 
 class Subscription(BaseModel):
