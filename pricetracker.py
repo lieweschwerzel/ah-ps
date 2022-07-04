@@ -83,7 +83,7 @@ def get_product_info(content, scan_date):
                 if (item.find('span', class_= regex4)):
                     discount = (item.find('span', class_= regex4).text + " " + discount)
             else:
-                discount = "0"
+                discount = None 
             if (item.find('span', class_ = regex5)):
                 unit = item.find('span', class_ = regex5).text
             else: 

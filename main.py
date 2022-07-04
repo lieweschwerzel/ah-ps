@@ -12,7 +12,7 @@ from pricetracker import start_scrape
 from database import ( fetch_all_items, get_subscriptions, create_subscription, delete_subscription, fetch_by_product_name, check_discounts )
 
 
-HOUR_SCHEDULE = "17:54"
+HOUR_SCHEDULE = "18:55:30"
 schedule.every().day.at(HOUR_SCHEDULE).do(start_scrape)
 
 app = FastAPI()
@@ -29,10 +29,7 @@ app.add_middleware(
 @app.post("/post")
 async def post_item(subscription: Subscription):
     response = await create_subscription(subscription)
-    if response:
-        return response
-    raise HTTPException(404, f"There is no item with the title {subscription.product_name}")
-
+    return response
 
 @app.get("/subs/{email}")
 async def get_subs_of_email(email):
