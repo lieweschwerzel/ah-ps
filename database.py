@@ -27,7 +27,6 @@ async def create_subscription(subscription):
     collection = database['subscriptions']     
     #collection.create_index([('email', pymongo.ASCENDING)], unique = True)    
     subs = []
-    print(subscription.unit)
     #check if sub already exists
     cursor  =  collection.find({ "$and" : [{"email": subscription.email}, {"product_name": subscription.product_name}, {"unit": subscription.unit}]})
     async for document in cursor:
@@ -38,9 +37,7 @@ async def create_subscription(subscription):
         await collection.insert_one(subscription.dict())        
         return subscription
         
-    
-
-
+ 
 async def get_subscriptions(email):
     collection = database['subscriptions']  
     subscriptions = []
@@ -76,10 +73,10 @@ def set_last_updated(last_update):
     #create if it doesnt exist, else update the date
     collection.update_one({'id': 1}, {'$set':{'last_updated':last_update}}, upsert=True)  
 
-def get_last_updated():
+async def last_updated_db():
     collection = database['_last_updated']  
-    res = collection.find({'id': 1})  
-    return res
+    return await collection.find_one({'id' : 1})
+  
 
  
 async def check_discounts(email):

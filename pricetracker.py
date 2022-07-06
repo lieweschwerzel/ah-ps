@@ -14,13 +14,15 @@ from database import (create_items, set_last_updated)
 
 
 BASE_URL = 'https://www.ah.nl/producten'
-chrome_options = Options()
-chrome_options.add_argument('--headless')    
-chrome_options.add_argument('--disable-gpu')
-browser = webdriver.Chrome(options=chrome_options, executable_path=r"chromedriver.exe")    
 
 
 def open_all_pages_cat(url, cat_name):
+    chrome_options = Options()
+    chrome_options.add_argument('--headless')    
+    chrome_options.add_argument('--disable-dev-shm-usage')
+    chrome_options.add_argument('--disable-gpu')
+    chrome_options.add_argument('--no-sandbox')
+    browser = webdriver.Chrome(options=chrome_options, executable_path=r"chromedriver.exe")    
     NEXT_BTN_XPATH = "//button[@class='button-or-anchor_root__3z4hb button-default_root__2DBX1 button-default_primary__R4c6W']"
     browser.get(url)    
     try:

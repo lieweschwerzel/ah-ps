@@ -9,7 +9,7 @@ from fastapi import BackgroundTasks, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from model import Subscription
 from pricetracker import start_scrape
-from database import ( fetch_all_items, get_subscriptions, create_subscription, delete_subscription, fetch_by_product_name, check_discounts )
+from database import ( fetch_all_items, get_subscriptions, create_subscription, delete_subscription, fetch_by_product_name, check_discounts, last_updated_db )
 
 
 HOUR_SCHEDULE = "00:01"
@@ -54,6 +54,10 @@ async def scan_by_date(scan_date):
     res = await fetch_all_items(scan_date)
     return res
 
+@app.get("/last")
+async def last_updated():    
+    res = await last_updated_db()
+    return res
 
 @app.get("/")
 async def read_root():    
