@@ -1,23 +1,83 @@
 from ast import Subscript
 from datetime import datetime
 from gc import collect
+from itertools import product
 import re
+from tokenize import Double
 from typing import Collection
 from fastapi import HTTPException
 from model import Item, Subscription
 import pymongo
 from pymongo import MongoClient
 import motor.motor_asyncio
+import psycopg2 
 
 cluster = motor.motor_asyncio.AsyncIOMotorClient('mongodb+srv://liewe:eaker007@cluster0.ohrbe.mongodb.net/test')
 mongo_client = MongoClient('mongodb+srv://liewe:eaker007@cluster0.ohrbe.mongodb.net/test') 
 #scan daily, each scan date has own collection
 database = cluster["PriceTracker"]
 
+try:
+    connection = psycopg2.connect("dbname=product user=liewe password=liewe")
+    # Create a cursor to perform database operations
+    cursor = connection.cursor()
+    # Print PostgreSQL details
+    print("PostgreSQL server information")
+    print(connection.get_dsn_parameters(), "\n")
+    # Executing a SQL query
+    cursor.execute("SELECT * FROM subscription")
+    print(cursor.fetchone())
+    # Fetch result
+    record = cursor.fetchone()
+    print("You are connected to - ", record, "\n")
+
+except (Exception) as error:
+    print("Error while connecting to PostgreSQL", error)
+finally:
+    if (connection):
+        cursor.close()
+        connection.close()
+        print("PostgreSQL connection is closed")
+
+def create_item_postgres(documents, scan_date):
+    connection = psycopg2.connect("dbname=product user=liewe password=liewe")
+    # Create a cursor to perform database operations
+    cursor = connection.cursor()
+    #Creating table as per requirement
+    sql ='''CREATE TABLE product(
+    id SERIAL PRIMARY KEY,           
+    product_name CHAR(500) NOT NULL,
+    price CHAR(20),
+    unit CHAR(20),
+    discount CHAR(60),
+    img_url CHAR(300)
+    )'''
+    cursor.execute(sql)
+    print("Table created successfully........")
+    connection.commit()
+    
+    print(scan_date)
+    print(get_time() + "  storing products in db")
+    for d in documents:
+        keyvalues = list(d.items())
+        product_name = keyvalues[0][1]
+        price = keyvalues[1][1]
+        unit = keyvalues[2][1]
+        discount = keyvalues[3][1]
+        img_url = keyvalues[4][1]
+        
+        add_product = ("INSERT into product (product_name, price, unit, discount, img_url) VALUES (%s, %s, %s, %s, %s)")
+        insert_data = (product_name, price, unit, discount, img_url)
+        cursor.execute(add_product, insert_data)
+        connection.commit()
+
+    cursor.close()
+    connection.close()
+
 
 def create_items(documents, scan_date):
     collection = database[scan_date] 
-    print(get_time() + "  storing products in db")
+    
     result = collection.insert_many(documents)
     return result
     

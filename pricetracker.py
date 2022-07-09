@@ -10,16 +10,18 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import NoSuchElementException 
-from database import (create_items, set_last_updated)
+from database import (create_items, create_item_postgres, set_last_updated)
 
 
 BASE_URL = 'https://www.ah.nl/producten'
 
 
 def open_all_pages_cat(url, cat_name):
+    # url = 'https://www.ah.nl/producten/salades-pizza-maaltijden?page=26'
     chrome_options = Options()
-    chrome_options.add_argument('--headless')    
-    chrome_options.add_argument('--disable-dev-shm-usage')
+    chrome_options.add_argument('--headless')  
+    chrome_options.add_experimental_option('excludeSwitches', ['enable-logging'])  
+    # chrome_options.add_argument('--disable-dev-shm-usage')
     chrome_options.add_argument('--disable-gpu')
     chrome_options.add_argument('--no-sandbox')
     browser = webdriver.Chrome(options=chrome_options, executable_path=r"chromedriver.exe")    
@@ -102,7 +104,7 @@ def get_product_info(content, scan_date):
             prodlist.append(product)
     print(get_time() + "  found "+ str(len(prodlist)) + " products")
     #store all products from category to DB
-    create_items(prodlist, scan_date)
+    create_item_postgres(prodlist, scan_date)
     
 
 def start_scrape():
