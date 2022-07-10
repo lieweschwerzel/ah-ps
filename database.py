@@ -44,7 +44,7 @@ def create_item_postgres(documents, scan_date):
     # Create a cursor to perform database operations
     cursor = connection.cursor()
     #Creating table as per requirement
-    sql ='''CREATE TABLE product(
+    sql ='''CREATE TABLE IF NOT EXISTS product(
     id SERIAL PRIMARY KEY,           
     product_name CHAR(500) NOT NULL,
     price CHAR(20),
@@ -111,7 +111,7 @@ async def delete_subscription(email, product_name):
     collection.delete_one({ "$and" : [{"email": email}, {"product_name": product_name}]})
 
 async def fetch_by_product_name(product_name):    
-    collection = database['2022_07_04'] 
+    collection = database['2022_07_09'] 
     items = []
     regex = ".*" + product_name + ".*"
     cursor = collection.find({'product_name': re.compile(regex, re.IGNORECASE)}).limit(15)
